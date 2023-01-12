@@ -3,23 +3,51 @@ const $cityName = $('#cityName');
 const $cityFormEl = $('#cityForm')
 const $todaysWeather = $('#todaysWeather');
 const $weatherTitle = $('#weatherTitle');
+const $prevSearchBtns = $('#prev-search-buttons')
+const $weatherIcon = $('#weatherIcon');
+const $btnDiv = $('#btnDiv');
+let prevSearches = [];
+
+let cityName = '';
 let lat = '';
 let longi = '';
 
+const showButtons = () => {
+    for(let i = 0; i < prevSearches.length; i++){
+        $(`.btn`).remove();
+    }
+    for(let i = 0; i < prevSearches.length; i++){
+        $prevSearchBtns.append(`<button class="btn"><p>${prevSearches[i]}<p></ button>`)
+    }
+    $btnDiv.attr('class', 'card d-flex')
+}
+
+
 const formSubmit = (event) => {
     event.preventDefault();
-
-    let cityName = $cityName.val();
+    
+    cityName = $cityName.val();
     if(cityName){
         getCoords(`http://api.openweathermap.org/geo/1.0/direct?q=${cityName}&appid=${myWeatherKey}`)
-
+        
         $cityName.value = '';
     }else{
         alert('Please Enter a City.');
     }
-
+    
 }
 
+const oldSearch = (event) => {
+    event.preventDefault();
+    
+    cityName = $(event.target).children("p").val();
+    
+    if(cityName){
+        getCoords(`http://api.openweathermap.org/geo/1.0/direct?q=${cityName}&appid=${myWeatherKey}`)
+    }else{
+        alert('Please Click a Previously Searched City.');
+    }
+}
 
 let getCoords = (weatherApiUrl) => {
     fetch(weatherApiUrl)
@@ -39,11 +67,13 @@ let displayWeather = () => {
         return response.json();
     })
     .then(function(data){
-        console.log(data);
         iconCaller = data.weather[0].icon;
         iconImgUrl = `http://openweathermap.org/img/wn/${iconCaller}@2x.png`
         $todaysWeather.text(data.weather[0].description);
-        $weatherTitle.append($(`<img src=${iconImgUrl}></img>`))
+        $weatherIcon.attr('src', iconImgUrl);
+        prevSearches.push(cityName);
+        localStorage.setItem('prevSearches', JSON.stringify(prevSearches));
+        showButtons();
     });
 }
 let displayForecast = () => {
@@ -56,4 +86,10 @@ let displayForecast = () => {
     });
 }
 
+if(JSON.parse(localStorage.getItem('prevSearches'))){
+    prevSearches = JSON.parse(localStorage.getItem('prevSearches'));
+    showButtons();
+}
+
 $cityFormEl.on('submit', formSubmit);
+$prevSearchBtns.on('click', oldSearch)
